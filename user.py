@@ -47,12 +47,7 @@ def create_users_data(**kwargs):
             Access:    
               type: array
               items:
-                type: object
-                properties:
-                  name:
-                    type: string
-                  access:
-                    type: string
+                type: string
     responses:
       201:
         description: user data added successfully

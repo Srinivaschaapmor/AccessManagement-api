@@ -9,9 +9,10 @@ from flasgger import Swagger, swag_from  # Import swag_from from flasgger
 from common_utils.logging_utils import setup_logger
 from pymongo import MongoClient
 import jwt as jwt_module
-
+from flask_cors import CORS
 # Create a Flask app
 app = Flask(__name__)
+CORS(app)
 swagger=Swagger(app)
 
 #from smtp server form full stack
