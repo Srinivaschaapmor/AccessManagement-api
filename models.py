@@ -23,12 +23,12 @@ class UserModel(BaseModel):
             raise ValueError('contact number should be of 10 digits')
         return v
     
-    # @validator('Access')
-    # def validate_access(cls,v):
-    #     valid_roles={'Space Admin','Super Admin','End User'}
-    #     if set(v)-valid_roles:
-    #         raise ValueError(f'Access role must of to be:{",".join(valid_roles)}.Invalid roles:{", ".join(set(v)-valid_roles)}')
-    #     return list(set(v))
+    @validator('Access')
+    def validate_access(cls,v):
+        valid_roles={'Admin','End User'}
+        if set(v)-valid_roles:
+            raise ValueError(f'Access role must of to be:{",".join(valid_roles)}.Invalid roles:{", ".join(set(v)-valid_roles)}')
+        return list(set(v))
     
     @validator('SpaceName')
     def validate_spacename(cls,v):

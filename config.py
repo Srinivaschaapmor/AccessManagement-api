@@ -5,7 +5,7 @@ from pymongo import MongoClient
 class UserConfig:
     @staticmethod
     def get_mongo_client():
-        client = MongoClient('mongodb://localhost:27017')
+        client = MongoClient('mongodb+srv://nexus-360-dev-user:tgaiqVncYpj6vOpz@nexus-360-dev.6tgnxqq.mongodb.net/')
         return client
 
     @staticmethod
@@ -23,7 +23,7 @@ class UserConfig:
 class LoginConfig:
     @staticmethod
     def get_mongo_client():
-        client = MongoClient('mongodb://localhost:27017')
+        client = MongoClient('mongodb+srv://nexus-360-dev-user:tgaiqVncYpj6vOpz@nexus-360-dev.6tgnxqq.mongodb.net/')
         return client 
     @staticmethod
     def get_database():
@@ -39,7 +39,7 @@ class LoginConfig:
 class UserLogin:
     @staticmethod
     def get_mongo_client():
-        client = MongoClient('mongodb://localhost:27017')
+        client = MongoClient('mongodb+srv://nexus-360-dev-user:tgaiqVncYpj6vOpz@nexus-360-dev.6tgnxqq.mongodb.net/')
         return client
 
     @staticmethod
