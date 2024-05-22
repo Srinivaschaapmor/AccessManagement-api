@@ -32,7 +32,7 @@ class UserModel(BaseModel):
     
     @validator('SpaceName')
     def validate_spacename(cls,v):
-        valid_spaces={'DevOps','AIML','Data Analysis','Human Resource','Full Stack','Quality Assurance','Business Analysis'}
+        valid_spaces={'DevOps','AI-ML','Data Analysis','Human Resource','Full Stack Developer','Quality Assurance','Business Analysis'}
         if set(v)-valid_spaces:
             raise ValueError(f'SpaceNames must be one of:{",".join(valid_spaces)}. Invalid spaces:{",".join(set(v)-valid_spaces)}')
         return list(set(v))
