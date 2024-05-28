@@ -154,8 +154,16 @@ def send_otp():
 def verify_otp():
     try:
         data = request.get_json()
+        if not data:
+            logger.warning('Request data is missing')
+            return jsonify({'error': 'Request data is missing'}), 400
+
         otp_received = data.get('otp')
         email = data.get('email')
+
+        if not otp_received or not email:
+            logger.warning('Email or OTP missing in the request')
+            return jsonify({'error': 'Email or OTP missing in the request'}), 400
 
         collection = LoginConfig.get_login_details()
         logindata = collection.find_one({'email': email, 'otp': otp_received})
@@ -163,14 +171,14 @@ def verify_otp():
         if not logindata:
             logger.warning('Email not found in login details: %s', email)
             return jsonify({'error': 'Invalid OTP'}), 400
-        
+
         correct_otp = logindata['otp']
         correct_otp_timestamp = logindata['timestamp']
 
         if (datetime.now() - correct_otp_timestamp).total_seconds() > 120:
             logger.warning('OTP verification failed: OTP expired for %s', email)
             return jsonify({'error': 'OTP expired. Please request a new one.'}), 400
-        
+
         if otp_received == correct_otp:
             logger.info('OTP verification successful for %s', email)
 
@@ -178,14 +186,17 @@ def verify_otp():
 
             if not user_data:
                 return jsonify({'error': 'User data not found'}), 400
-            
+
             payload = {
                 'Id': user_data.get('Id'),
                 'EmpId': user_data.get('EmpId'),
                 'FirstName': user_data.get('FirstName')
             }
             secret_key = 'St@and@100ardapi@aap100mor#100'
-            encoded_jwt = jwt_module.encode(payload, secret_key, algorithm='HS256').decode('utf-8')  # Decode bytes to string
+            encoded_jwt = jwt_module.encode(payload, secret_key, algorithm='HS256')
+
+            if isinstance(encoded_jwt, bytes):
+                encoded_jwt = encoded_jwt.decode('utf-8')
 
             logger.info('Generated JWT token: %s', encoded_jwt)
 
