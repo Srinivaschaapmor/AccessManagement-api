@@ -10,6 +10,7 @@ SECRET_KEY = 'St@and@100ardapi@aap100mor#100'
 def verify_token(token):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        # print("TOKEN:", payload);
         return payload['EmpId'], payload['Access'], payload['SpaceName']
     except jwt.ExpiredSignatureError:
         return None, None, None
@@ -19,9 +20,10 @@ def verify_token(token):
 def token_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        jwtToken = request.headers.get('Authorization')
-        token = jwtToken.split(" ")[1]
-
+        # jwtToken = request.headers.get('Authorization')
+        token = request.headers.get('Authorization')
+        # token = jwtToken.split(" ")[1]
+        
         if not token:
             return jsonify({'message': 'Authorization required'}), 401
 
