@@ -222,7 +222,8 @@ def verify_otp():
                 'EmpId': user_data.get('EmpId'),
                 'FirstName': user_data.get('FirstName'),
                 'Access': user_data.get('Access'),
-                'SpaceName': user_data.get('SpaceName')
+                'SpaceName': user_data.get('SpaceName'),
+                'Role': user_data.get('Role'),
             }
             secret_key = 'St@and@100ardapi@aap100mor#100'
             encoded_jwt = jwt_module.encode(payload, secret_key, algorithm='HS256')

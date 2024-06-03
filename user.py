@@ -6,8 +6,9 @@ from config import UserConfig
 from pymongo import ASCENDING, errors
 from flasgger import Swagger
 from auth_token import token_required
-
+import jwt as jwt_module
 user_routes = Blueprint('users_routes', __name__)
+from flask_cors import CORS
 
 logger = setup_logger()
 user_collection = UserConfig.get_users_collection()
@@ -82,10 +83,20 @@ def create_users_data(**kwargs):
     """
     try:
         uploader_access = kwargs.get('uploader_access')
-        if 'Admin' not in uploader_access:
-            return jsonify({'message': 'Permission denied'}), 403
+        # cookies = request.cookies
+        # print(f"Received cookies: {request.headers.get('Authorization')}")
+        # print(f"Received cookies: {request.cookies.get('access')}")
+        secret_key = 'St@and@100ardapi@aap100mor#100'
+        token = request.headers.get('Authorization')
+        uploader_data = jwt_module.decode(token, secret_key)
+        # print('UPLOADER DATA', uploader_data)
+        if uploader_data['Role'] != 'Admin':
+          return jsonify({'message': 'Permission denied'}), 403
         logger.info('A new user data added successfully')
         json_data = request.get_json()
+        json_data['Role'] = "User"
+        json_data['Access'] = []
+        print("DATA", json_data)
         user_data = UserModel(**json_data)
         user_data.Id = str(uuid.uuid4())
         result = user_collection.insert_one(user_data.dict())
@@ -145,9 +156,17 @@ def update_user_data(empid, **kwargs):
         description: Internal server error
     """
     try:
-        uploader_access = kwargs.get('uploader_access')
-        if 'Admin' not in uploader_access:
-            return jsonify({'message': 'Permission denied'}), 403
+        # uploader_access = kwargs.get('uploader_access')
+        # if 'Admin' not in uploader_access:
+        #     return jsonify({'message': 'Permission denied'}), 403
+
+        secret_key = 'St@and@100ardapi@aap100mor#100'
+        token = request.headers.get('Authorization')
+        uploader_data = jwt_module.decode(token, secret_key)
+        # print('UPLOADER DATA', uploader_data)
+        if uploader_data['Role'] != 'Admin':
+          return jsonify({'message': 'Permission denied'}), 403
+        logger.info('A new user data added successfully')
         logger.info('Updating user data for EmpId: %s', empid)
         json_data = request.get_json()
 
@@ -212,9 +231,17 @@ def update_user_access(empid, **kwargs):
         description: Internal server error
     """
     try:
-        uploader_access = kwargs.get('uploader_access')
-        if 'Admin' not in uploader_access:
-            return jsonify({'message': 'Permission denied'}), 403
+        # uploader_access = kwargs.get('uploader_access')
+        # if 'Admin' not in uploader_access:
+        #     return jsonify({'message': 'Permission denied'}), 403
+
+        secret_key = 'St@and@100ardapi@aap100mor#100'
+        token = request.headers.get('Authorization')
+        uploader_data = jwt_module.decode(token, secret_key)
+        # print('UPLOADER DATA', uploader_data)
+        if uploader_data['Role'] != 'Admin':
+          return jsonify({'message': 'Permission denied'}), 403
+        logger.info('A new user data added successfully')
         logger.info('Updating access details for user with EmpId: %s', empid)
         json_data = request.get_json()
 

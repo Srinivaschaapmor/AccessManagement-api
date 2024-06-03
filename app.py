@@ -7,6 +7,8 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
 app=Flask(__name__)
+CORS(app, supports_credentials=True)
+
 @app.route('/')
 def homepage():
     return "<h1>Welcome</h1>"
@@ -14,7 +16,7 @@ def homepage():
 app.register_blueprint(otp_routes)
 app.register_blueprint(user_routes)
 
-CORS(app)
+# CORS(app)
 
 app.config['SWAGGER']={
     'title':'Access Management-api',
