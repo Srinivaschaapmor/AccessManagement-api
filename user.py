@@ -10,6 +10,7 @@ from functools import wraps
 import jwt as jwt_module
 user_routes = Blueprint('users_routes', __name__)
 from flask_cors import CORS
+from bson import ObjectId
 
 logger = setup_logger()
 user_collection = UserConfig.get_users_collection()
@@ -29,7 +30,9 @@ def get_endusers_list():
     """
     try:
         logger.info('Fetching user list')
-        users = list(user_collection.find({}, {"_id": 0}))
+        users = list(user_collection.find({}))
+        for user in users:
+          user['_id'] = str(user['_id'])
         return jsonify(users),200
     except Exception as e:
         logger.error('Error fetching user list: %s', str(e), exc_info=True)
@@ -139,7 +142,7 @@ def create_users_data(**kwargs):
         # print(f"Received cookies: {request.cookies.get('access')}")
         secret_key = 'St@and@100ardapi@aap100mor#100'
         token = request.headers.get('Authorization')
-        uploader_data = jwt_module.decode(token, secret_key)
+        uploader_data = jwt_module.decode(token, secret_key, algorithms=["HS256"])
         # print('UPLOADER DATA', uploader_data)
         if uploader_data['Role'] != 'Admin':
           return jsonify({'message': 'Permission denied'}), 403
@@ -210,7 +213,7 @@ def update_user_data(empid, **kwargs):
 
         secret_key = 'St@and@100ardapi@aap100mor#100'
         token = request.headers.get('Authorization')
-        uploader_data = jwt_module.decode(token, secret_key)
+        uploader_data = jwt_module.decode(token, secret_key,algorithms=["HS256"])
         # print('UPLOADER DATA', uploader_data)
         if uploader_data['Role'] != 'Admin':
           return jsonify({'message': 'Permission denied'}), 403
@@ -280,7 +283,7 @@ def update_user_access(empid, **kwargs):
 
         secret_key = 'St@and@100ardapi@aap100mor#100'
         token = request.headers.get('Authorization')
-        uploader_data = jwt_module.decode(token, secret_key)
+        uploader_data = jwt_module.decode(token, secret_key,algorithms=["HS256"])
         # print('UPLOADER DATA', uploader_data)
         if uploader_data['Role'] != 'Admin':
           return jsonify({'message': 'Permission denied'}), 403
@@ -355,7 +358,8 @@ def delete_user(empid, **kwargs):
         description: Internal server error
     """
     try:
-        result = user_collection.delete_one({"EmpId": empid})
+        empid = ObjectId(empid)
+        result = user_collection.delete_one({"_id": empid})
         if result.deleted_count == 1:
             logger.info('User with EmpId %s deleted successfully', empid)
             return jsonify({"message": "User deleted successfully"}), 200

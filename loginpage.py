@@ -16,35 +16,35 @@ otp_routes = Blueprint('otp_routes', __name__)
 logger = setup_logger()
 mail = Mail()
 # dummy data
-access = [
-  "Recent_Openings_View",
-  "Recent_Openings_JobOpenings_View",
-  "Recent_Openings_JobOpenings_Write",
-  "Events_View",
-  "Policies_View",
-  "Employees_View",
-  "Recruitment_View",
-  "New_Recruitment_View_And_Write",
-  "New_Recruitment_Write",
-  "Recruitment_Status_View_And_write",
-  "Recruitment_Status_Write",
-  "On_Boarding_View_And_Write",
-  "On_Boarding_Write",
-  "New_Job_View_And_Write",
-  "New_Job_Write",
-  "Interviewer_Board_View",
-  "Interviewer_Board_write",
-  "Blogs_View_And_Write",
-  "Blogs_Write",
-  "Write_FeedBack_View",
-  "Write_FeedBack_View_And_Write",
-  "View_FeedBack_View",
-  "View_FeedBack_Write",
-  "Projects_View_And_Write",
-  "Projects_Write",
-  "Reports_View_And_Write",
-  "Reports_Write",
-]
+# access = [
+#   "Recent_Openings_View",
+#   "Recent_Openings_JobOpenings_View",
+#   "Recent_Openings_JobOpenings_Write",
+#   "Events_View",
+#   "Policies_View",
+#   "Employees_View",
+#   "Recruitment_View",
+#   "New_Recruitment_View_And_Write",
+#   "New_Recruitment_Write",
+#   "Recruitment_Status_View_And_write",
+#   "Recruitment_Status_Write",
+#   "On_Boarding_View_And_Write",
+#   "On_Boarding_Write",
+#   "New_Job_View_And_Write",
+#   "New_Job_Write",
+#   "Interviewer_Board_View",
+#   "Interviewer_Board_write",
+#   "Blogs_View_And_Write",
+#   "Blogs_Write",
+#   "Write_FeedBack_View",
+#   "Write_FeedBack_View_And_Write",
+#   "View_FeedBack_View",
+#   "View_FeedBack_Write",
+#   "Projects_View_And_Write",
+#   "Projects_Write",
+#   "Reports_View_And_Write",
+#   "Reports_Write",
+# ]
 
 def generate_otp():
     # Randomly generating OTP
@@ -213,15 +213,18 @@ def verify_otp():
             logger.info('OTP verification successful for %s', email)
 
             user_data = UserLogin.get_user_data(email)
-            print("USER DATA: ", user_data)
             if not user_data:
                 return jsonify({'error': 'User data not found'}), 400
+
+            user_access = user_data.get("Access",[])
+            user_access = [str(Access) for Access in user_access]
+            print("userAccess",user_access)
 
             payload = {
                 'Id': user_data.get('Id'),
                 'EmpId': user_data.get('EmpId'),
                 'FirstName': user_data.get('FirstName'),
-                'Access': user_data.get('Access'),
+                'Access': user_access,
                 'SpaceName': user_data.get('SpaceName'),
                 'Role': user_data.get('Role'),
             }
@@ -236,7 +239,7 @@ def verify_otp():
                 'message': 'OTP verification successful. Login successful.',
                 'jwt_token': encoded_jwt,
                 'userEmail': user_data.get("Email"),
-                'access': access
+                'access': user_access
             }), 201
         else:
             logger.warning('Invalid OTP provided: %s', otp_received)
