@@ -15,7 +15,8 @@ class UserModel(BaseModel):
     Access:List[str]
     JobTitle:str
     EmployeeType:str
-    SpaceName:List[str]
+    # SpaceName:List[str]
+    SpaceName: str
 
     @validator('Contact')
     def validate_contact_length(cls,v):
@@ -30,12 +31,12 @@ class UserModel(BaseModel):
             raise ValueError(f'Access role must of to be:{",".join(valid_roles)}.Invalid roles:{", ".join(set(v)-valid_roles)}')
         return list(set(v))
     
-    @validator('SpaceName')
-    def validate_spacename(cls,v):
-        valid_spaces={'DevOps','AI-ML','Data Analysis','Human Resource','Full Stack Developer','Quality Assurance','Business Analysis'}
-        if set(v)-valid_spaces:
-            raise ValueError(f'SpaceNames must be one of:{",".join(valid_spaces)}. Invalid spaces:{",".join(set(v)-valid_spaces)}')
-        return list(set(v))
+    # @validator('SpaceName')
+    # def validate_spacename(cls,v):
+    #     valid_spaces={'DevOps','AI-ML','Data Analysis','Human Resource','Full Stack Developer','Quality Assurance','Business Analysis'}
+    #     if set(v)-valid_spaces:
+    #         raise ValueError(f'SpaceNames must be one of:{",".join(valid_spaces)}. Invalid spaces:{",".join(set(v)-valid_spaces)}')
+    #     return list(set(v))
     
     # @validator('Access')
     # def validate_access(cls, v):

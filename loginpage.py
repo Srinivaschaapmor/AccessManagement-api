@@ -15,6 +15,36 @@ from flask_cors import CORS
 otp_routes = Blueprint('otp_routes', __name__)
 logger = setup_logger()
 mail = Mail()
+# dummy data
+access = [
+  "Recent_Openings_View",
+  "Recent_Openings_JobOpenings_View",
+  "Recent_Openings_JobOpenings_Write",
+  "Events_View",
+  "Policies_View",
+  "Employees_View",
+  "Recruitment_View",
+  "New_Recruitment_View_And_Write",
+  "New_Recruitment_Write",
+  "Recruitment_Status_View_And_write",
+  "Recruitment_Status_Write",
+  "On_Boarding_View_And_Write",
+  "On_Boarding_Write",
+  "New_Job_View_And_Write",
+  "New_Job_Write",
+  "Interviewer_Board_View",
+  "Interviewer_Board_write",
+  "Blogs_View_And_Write",
+  "Blogs_Write",
+  "Write_FeedBack_View",
+  "Write_FeedBack_View_And_Write",
+  "View_FeedBack_View",
+  "View_FeedBack_Write",
+  "Projects_View_And_Write",
+  "Projects_Write",
+  "Reports_View_And_Write",
+  "Reports_Write",
+]
 
 def generate_otp():
     # Randomly generating OTP
@@ -154,8 +184,16 @@ def send_otp():
 def verify_otp():
     try:
         data = request.get_json()
+        if not data:
+            logger.warning('Request data is missing')
+            return jsonify({'error': 'Request data is missing'}), 400
+
         otp_received = data.get('otp')
         email = data.get('email')
+
+        if not otp_received or not email:
+            logger.warning('Email or OTP missing in the request')
+            return jsonify({'error': 'Email or OTP missing in the request'}), 400
 
         collection = LoginConfig.get_login_details()
         logindata = collection.find_one({'email': email, 'otp': otp_received})
@@ -163,35 +201,41 @@ def verify_otp():
         if not logindata:
             logger.warning('Email not found in login details: %s', email)
             return jsonify({'error': 'Invalid OTP'}), 400
-        
+
         correct_otp = logindata['otp']
         correct_otp_timestamp = logindata['timestamp']
 
         if (datetime.now() - correct_otp_timestamp).total_seconds() > 120:
             logger.warning('OTP verification failed: OTP expired for %s', email)
             return jsonify({'error': 'OTP expired. Please request a new one.'}), 400
-        
+
         if otp_received == correct_otp:
             logger.info('OTP verification successful for %s', email)
 
             user_data = UserLogin.get_user_data(email)
-
+            print("USER DATA: ", user_data)
             if not user_data:
                 return jsonify({'error': 'User data not found'}), 400
-            
+
             payload = {
                 'Id': user_data.get('Id'),
                 'EmpId': user_data.get('EmpId'),
-                'FirstName': user_data.get('FirstName')
+                'FirstName': user_data.get('FirstName'),
+                'Access': user_data.get('Access'),
+                'SpaceName': user_data.get('SpaceName')
             }
             secret_key = 'St@and@100ardapi@aap100mor#100'
-            encoded_jwt = jwt_module.encode(payload, secret_key, algorithm='HS256').decode('utf-8')  # Decode bytes to string
+            encoded_jwt = jwt_module.encode(payload, secret_key, algorithm='HS256')
+
+            if isinstance(encoded_jwt, bytes):
+                encoded_jwt = encoded_jwt.decode('utf-8')
 
             logger.info('Generated JWT token: %s', encoded_jwt)
-
             return jsonify({
                 'message': 'OTP verification successful. Login successful.',
-                'jwt_token': encoded_jwt
+                'jwt_token': encoded_jwt,
+                'userEmail': user_data.get("Email"),
+                'access': access
             }), 201
         else:
             logger.warning('Invalid OTP provided: %s', otp_received)

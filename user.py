@@ -118,9 +118,7 @@ def create_users_data(**kwargs):
             EmployeeType:
               type: string
             SpaceName:
-              type: array
-              items:
-                type: string  
+              type: string  
             Access:    
               type: array
               items:
@@ -243,9 +241,7 @@ def update_user_access(empid, **kwargs):
               items:
                 type: string
             SpaceName:
-              type: array
-              items:
-                type: string
+              type: string
     responses:
       200:
         description: User access details updated successfully
@@ -269,14 +265,16 @@ def update_user_access(empid, **kwargs):
         if not user:
             return jsonify({'error': 'User not found'}), 404
 
-        existing_space_names = user.get('SpaceName', [])
-        new_space_names = json_data.get('SpaceName', [])
-
-        updated_space_names = list(set(existing_space_names + new_space_names))
-
+        existing_access = user.get('Access', [])
+        new_access = json_data.get('Access', [])
+        print("json_data", request.json)
+        print("existing_space_names", existing_access)
+        print("new_space_names", new_access)
+        updated_access = list(set(existing_access + new_access))
+        print("updated_access", updated_access)
         update_data = {
-            'Access': json_data.get('Access', []),
-            'SpaceName': updated_space_names
+            'Access': updated_access,
+            'SpaceName': json_data.get('SpaceName', [])
         }
         user_collection.update_one({'EmpId': empid}, {'$set': update_data})
         return jsonify({'message': 'User details updated successfully'}), 200
