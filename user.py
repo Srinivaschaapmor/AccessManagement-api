@@ -6,6 +6,7 @@ from config import UserConfig
 from pymongo import ASCENDING, errors
 from flasgger import Swagger
 from auth_token import token_required
+from functools import wraps
 
 user_routes = Blueprint('users_routes', __name__)
 
@@ -32,8 +33,65 @@ def get_endusers_list():
     except Exception as e:
         logger.error('Error fetching user list: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error'}), 500
-
+    
+@user_routes.route('/users/<string:empid>/access', methods=['GET'])
+def get_access_details(empid):
+    """
+    Get enduser access details by empid
+    ---
+    parameters:
+      - name: empid
+        in: path
+        description: ID of the user to retrieve access details
+        required: true
+        type: string
+    responses:
+      200:
+        description: Access details retrieved successfully
+      404:
+        description: User not found
+      500:
+        description: Internal server error        
+    """
+    try:
+        logger.info('Fetching user access details for empid: %s', empid)
+        user = user_collection.find_one({'EmpId': empid}, {'_id': 0, 'Access': 1, 'SpaceName': 1})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        
+        return jsonify(user), 200
+    except Exception as e:
+        logger.error('Error fetching user access details: %s', str(e), exc_info=True)
+        return jsonify({"error": "Internal server error occurred"}), 500
+    
+@user_routes.route('/access_user', methods=['GET'])
+def get_accessed_user():
+    """
+    Get details of users with access details
+    ---
+    responses:
+      200:
+        description: A list of accessed users
+      404:
+        description: No users found with access
+      500:
+        description: Internal server error
+    """
+    try:
+        logger.info('Fetching users with access')
+        query = {'Access': {'$ne': []}}
+        users = list(user_collection.find(query, {"_id": 0}))
+        
+        if not users:
+            return jsonify({"error": "No users found with access"}), 404
+        
+        return jsonify(users), 200
+    except Exception as e:
+        logger.error('Error fetching accessed user list: %s', str(e), exc_info=True)
+        return jsonify({'error': 'Internal server error'}), 500
+    
 @user_routes.route('/create_user', methods=['POST'])
+@token_required
 def create_users_data(**kwargs):
     """
     Create a user
@@ -70,13 +128,6 @@ def create_users_data(**kwargs):
     responses:
       201:
         description: User data added successfully
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-            document_id:
-              type: string
       400:
         description: Error in creating user data
       409:
@@ -87,8 +138,10 @@ def create_users_data(**kwargs):
         if 'Admin' not in uploader_access:
             return jsonify({'message': 'Permission denied'}), 403
         logger.info('A new user data added successfully')
+
         json_data = request.get_json()
         user_data = UserModel(**json_data)
+        
         user_data.Id = str(uuid.uuid4())
         result = user_collection.insert_one(user_data.dict())
         logger.info('User data created successfully')
@@ -132,11 +185,6 @@ def update_user_data(empid, **kwargs):
     responses:
       200:
         description: User data updated successfully
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
       400:
         description: Bad request - Invalid parameters
       404:
@@ -201,11 +249,6 @@ def update_user_access(empid, **kwargs):
     responses:
       200:
         description: User access details updated successfully
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
       400:
         description: Bad request - Invalid parameters
       404:
@@ -241,6 +284,21 @@ def update_user_access(empid, **kwargs):
         logger.error('Error updating user details: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error occurred'}), 500
 
+# @user_routes.route('/users/delete/<string:empid>', methods=['DELETE'])
+# def token_required(f):
+#     @wraps(f)
+#     def decorated_function(*args, **kwargs):
+#         # Implement your token validation logic here
+#         token = request.headers.get('Authorization')
+#         if not token:
+#             return jsonify({"message": "Token is missing"}), 401
+#         # Validate the token (this is just a placeholder logic)
+#         # valid_token = validate_token(token)
+#         # if not valid_token:
+#         #     return jsonify({"message": "Invalid token"}), 401
+#         return f(*args, **kwargs)
+#     return decorated_function
+
 @user_routes.route('/users/delete/<string:empid>', methods=['DELETE'])
 @token_required
 def delete_user(empid, **kwargs):
@@ -275,7 +333,7 @@ def delete_user(empid, **kwargs):
         result = user_collection.delete_one({"EmpId": empid})
         if result.deleted_count == 1:
             logger.info('User with EmpId %s deleted successfully', empid)
-            return jsonify({"message": "User data deleted successfully"}), 200
+            return jsonify({"message": "User deleted successfully"}), 200
         else:
             logger.warning('User with EmpId %s not found', empid)
             return jsonify({"message": "User not found"}), 404
