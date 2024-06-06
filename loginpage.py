@@ -218,7 +218,7 @@ def verify_otp():
 
             user_access = user_data.get("Access",[])
             user_access = [str(Access) for Access in user_access]
-            print("userAccess",user_access)
+            # print("userAccess",user_access)
 
             payload = {
                 'Id': user_data.get('Id'),

@@ -151,7 +151,7 @@ def create_users_data(**kwargs):
         json_data = request.get_json()
         json_data['Role'] = "User"
         json_data['Access'] = []
-        print("DATA", json_data)
+        # print("DATA", json_data)
         user_data = UserModel(**json_data)
         
         user_data.Id = str(uuid.uuid4())
@@ -297,11 +297,11 @@ def update_user_access(empid, **kwargs):
 
         existing_access = user.get('Access', [])
         new_access = json_data.get('Access', [])
-        print("json_data", request.json)
-        print("existing_space_names", existing_access)
-        print("new_space_names", new_access)
+        # print("json_data", request.json)
+        # print("existing_space_names", existing_access)
+        # print("new_space_names", new_access)
         updated_access = list(set(existing_access + new_access))
-        print("updated_access", updated_access)
+        # print("updated_access", updated_access)
         update_data = {
             'Access': updated_access,
             'SpaceName': json_data.get('SpaceName', [])
