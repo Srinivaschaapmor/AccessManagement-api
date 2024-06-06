@@ -1,4 +1,3 @@
-
 from uuid import uuid4
 from datetime import datetime
 from pydantic import BaseModel,Field,validator
@@ -25,32 +24,22 @@ class UserModel(BaseModel):
             raise ValueError('contact number should be of 10 digits')
         return v
     
-    # @validator('Access')
-    # def validate_access(cls,v):
-    #     valid_roles={'Admin','End User'}
-    #     if set(v)-valid_roles:
-    #         raise ValueError(f'Access role must of to be:{",".join(valid_roles)}.Invalid roles:{", ".join(set(v)-valid_roles)}')
-    #     return list(set(v))
+    @validator('Role')
+    def validate_roles(cls,v):
+        valid_roles={'Admin','User'}
+        if v not in valid_roles:
+            raise ValueError(f'Role must be one of:{",".join(valid_roles)}. Invalid role:{v}')
+        return v
     
-    # @validator('SpaceName')
-    # def validate_spacename(cls,v):
-    #     valid_spaces={'DevOps','AI-ML','Data Analysis','Human Resource','Full Stack Developer','Quality Assurance','Business Analysis'}
-    #     if set(v)-valid_spaces:
-    #         raise ValueError(f'SpaceNames must be one of:{",".join(valid_spaces)}. Invalid spaces:{",".join(set(v)-valid_spaces)}')
-    #     return list(set(v))
-    
-    # @validator('Access')
-    # def validate_access(cls, v):
-    #     valid_roles = {'Groundfloor': 'Approved','Firstfloor':'Approved'}  # Updated valid_roles
-    #     if not all(key in v for key in ['Key', 'value']):
-    #         raise ValueError("Access entry must have 'Key' and 'value' keys.")
-    #     if v['Key'] not in valid_roles:
-    #         raise ValueError(f"Invalid key '{v['Key']}' in access. Keys must be one of: {', '.join(valid_roles)}.")
-    #     if v['value'] != valid_roles[v['Key']]:
-    #         raise ValueError(f"Invalid value '{v['value']}' for key '{v['Key']}'.")
-    #     return v
-
-
-
-
-
+    @validator('Access')
+    def validate_access(cls,v):
+        valid_access={"Recent_Openings_View","Recent_Openings_JobOpenings_View","Recent_Openings_JobOpenings_Write",
+                     "Events_View","Policies_View","Employees_View","Recruitment_View","New_Recruitment_View_And_Write",
+                     "New_Recruitment_Write","Recruitment_Status_View_And_write","Recruitment_Status_Write",
+                     "On_Boarding_View_And_Write","On_Boarding_Write","New_Job_View_And_Write","New_Job_Write",
+                     "Interviewer_Board_View","Interviewer_Board_write","Blogs_View_And_Write","Blogs_Write","Write_FeedBack_View",
+                     "Write_FeedBack_View_And_Write","View_FeedBack_View","View_FeedBack_Write","Projects_View_And_Write",
+                     "Projects_Write","Reports_View_And_Write","Reports_Write"}
+        if set(v)-valid_access:
+            raise ValueError(f'Access role must of to be:{",".join(valid_access)}.Invalid roles:{", ".join(set(v)-valid_access)}')
+        return list(set(v))

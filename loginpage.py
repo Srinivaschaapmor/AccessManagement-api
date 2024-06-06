@@ -80,8 +80,7 @@ def is_valid_email(email):
             'schema': {
                 'type': 'object',
                 'properties': {
-                    'message': {'type': 'string'},
-                    'otp': {'type': 'string'}
+                    'message': {'type': 'string'}
                 }
             }
         },
@@ -126,7 +125,7 @@ def send_otp():
             msg.body = f"Dear {recipient},\n\nYour OTP is: {otp}\n\nPlease use this code within the next 2 minutes to complete the login process. If you didn't request this OTP or if you encounter any issues, please contact our support team immediately."
             mail.send(msg)
             logger.info('OTP sent successfully to %s', recipient)
-            return jsonify({'message': 'OTP sent successfully', 'otp': otp}), 201
+            return jsonify({'message': 'OTP sent successfully'}), 201
         else:
             logger.error('Failed to insert OTP data into MongoDB')
             return jsonify({'error': 'Failed to insert OTP data into MongoDB'}), 500

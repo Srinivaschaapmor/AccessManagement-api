@@ -11,7 +11,7 @@ def verify_token(token):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         # print("TOKEN:", payload);
-        return payload['EmpId'], payload['Access'], payload['SpaceName']
+        return payload['EmpId'], payload['Access'], payload['Role']
     except jwt.ExpiredSignatureError:
         return None, None, None
     except jwt.InvalidTokenError:
@@ -27,14 +27,14 @@ def token_required(f):
         if not token:
             return jsonify({'message': 'Authorization required'}), 401
 
-        uploader_emp_id, uploader_access, uploader_space = verify_token(token)
+        uploader_emp_id, uploader_access, uploader_role = verify_token(token)
 
         if not uploader_emp_id:
             return jsonify({'message': 'Invalid token'}), 401
 
         kwargs['uploader_emp_id'] = uploader_emp_id
         kwargs['uploader_access'] = uploader_access
-        kwargs['uploader_space'] = uploader_space
+        kwargs['uploader_role'] = uploader_role
 
         return f(*args, **kwargs)
     return decorated_function
