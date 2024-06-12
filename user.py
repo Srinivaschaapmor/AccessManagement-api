@@ -8,6 +8,7 @@ from flasgger import Swagger
 from auth_token import token_required
 from functools import wraps
 import jwt as jwt_module
+from pymongo.collection import Collection
 
 from flask_cors import CORS
 from bson import ObjectId
@@ -162,14 +163,25 @@ def create_users_data(**kwargs):
         json_data['Role'] = "User"
         json_data['Access'] = []
         # print("DATA", json_data)
-        user_data = UserModel(**json_data)
+        user_data = UserModel(**json_data)    
+
+        def check_unique_fields(EmpId: str, Email: str, user_collection: Collection):
+            if user_collection.find_one({"EmpId": EmpId}):
+              raise ValueError(f'EmpId {EmpId} already exists.')
+            if user_collection.find_one({"Email": Email}):
+              raise ValueError(f'Email {Email} already exists.')
+        check_unique_fields(user_data.EmpId, user_data.Email, user_collection)    
         
         user_data.Id = str(uuid.uuid4())
         result = user_collection.insert_one(user_data.dict())
         return jsonify({'message': 'User data added successfully', 'document_id': str(result.inserted_id)}), 201
+    except ValueError as e:
+        # Handle duplicate EmpId or Email error
+        logger.error('Duplicate')
+        return jsonify({'error': str(e)}), 409
     except errors.DuplicateKeyError:
-        logger.error('Duplicate user ID detected: %s', user_data.EmpId)
-        return jsonify({'error': 'Duplicate user ID'}), 409
+        # Handle potential duplicate key errors from MongoDB
+        return jsonify({'error': 'Duplicate key error'}), 409
     except Exception as e:
         logger.error('Error creating user data: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error occurred'}), 500

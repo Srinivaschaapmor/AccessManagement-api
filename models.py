@@ -1,7 +1,6 @@
 from uuid import uuid4
-from datetime import datetime
 from pydantic import BaseModel,Field,validator
-from typing import List, Optional,Dict
+from typing import List
 
 class UserModel(BaseModel):
     Id:str=Field(default_factory=lambda: str(uuid4()))
@@ -30,6 +29,15 @@ class UserModel(BaseModel):
         if v not in valid_roles:
             raise ValueError(f'Role must be one of:{",".join(valid_roles)}. Invalid role:{v}')
         return v
+    
+    @validator('EmpId')
+    def validate_emp_id(cls, value):
+        return value
+
+    @validator('Email')
+    def validate_email(cls, value):
+        return value
+
     
     @validator('Access')
     def validate_access(cls,v):
