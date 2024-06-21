@@ -167,9 +167,9 @@ def create_users_data(**kwargs):
 
         def check_unique_fields(EmpId: str, Email: str, user_collection: Collection):
             if user_collection.find_one({"EmpId": EmpId}):
-              raise ValueError(f'EmpId {EmpId} already exists.')
+              raise ValueError(f'User already exists.')
             if user_collection.find_one({"Email": Email}):
-              raise ValueError(f'Email {Email} already exists.')
+              raise ValueError(f'User already exists.')
         check_unique_fields(user_data.EmpId, user_data.Email, user_collection)    
         
         user_data.Id = str(uuid.uuid4())
@@ -232,6 +232,8 @@ def update_user_data(empid, **kwargs):
         description: User not found
       403:
         description: Permission denied
+      409:
+        description: Duplicate user data
       500:
         description: Internal server error
     """
@@ -242,28 +244,39 @@ def update_user_data(empid, **kwargs):
 
         logger.info('Updating user data for EmpId: %s', empid)
         json_data = request.get_json()
-        empid=ObjectId(empid)
+        empid = ObjectId(empid)
 
         user = user_collection.find_one({'_id': empid})
         if not user:
             return jsonify({'error': 'User not found'}), 404
         
+        # Check for duplicates
+        duplicate_user = user_collection.find_one({
+            '$and': [
+                {'_id': {'$ne': empid}},
+                {'$or': [{'EmpId': json_data.get('EmpId')}, {'Email': json_data.get('Email')}]}
+            ]
+        })
+        if duplicate_user:
+            return jsonify({'error': 'User already exists.'}), 409
+        
+        # Update data
         update_data = {
             'FirstName': json_data.get('FirstName'),
             'LastName': json_data.get('LastName'),
-            'EmpId':json_data.get('EmpId'),
+            'EmpId': json_data.get('EmpId'),
             'Contact': json_data.get('Contact'),
-            'Email':json_data.get('Email'),
-            'JobTitle':json_data.get('JobTitle'),
+            'Email': json_data.get('Email'),
+            'JobTitle': json_data.get('JobTitle'),
             'EmployeeType': json_data.get('EmployeeType'),
-            'SpaceName':json_data.get('SpaceName')
-
+            'SpaceName': json_data.get('SpaceName')
         }
         user_collection.update_one({'_id': empid}, {'$set': update_data})
         return jsonify({'message': 'User data updated successfully'}), 200
     except Exception as e:
         logger.error('Error updating user data: %s', str(e), exc_info=True)
-        return jsonify({'error': 'Internal server error occurred'}), 500
+        return jsonify({'error': 'Internal server error'}), 500
+
 
 @user_routes.route('/users/update/access/<string:empid>', methods=['PUT'])
 @token_required
@@ -326,7 +339,7 @@ def update_user_access(empid, **kwargs):
         # print("updated_access", updated_access)
         update_data = {
             'Access': updated_access,
-            'SpaceName': json_data.get('SpaceName', [])
+            
         }
         user_collection.update_one({'_id': empid}, {'$set': update_data})
         return jsonify({'message': 'User details updated successfully'}), 200
