@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from loginpage import otp_routes
 from user import user_routes
@@ -6,6 +7,7 @@ from flasgger import Swagger
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
+APP_PORT = os.getenv("PORT")
 app=Flask(__name__)
 CORS(app, supports_credentials=True)
 
@@ -35,5 +37,5 @@ jwt=JWTManager()
 jwt.init_app(app)
 
 if __name__=="__main__":
-    app.run(debug=True, port=4500, host="0.0.0.0")
+    app.run(debug=True, port=APP_PORT, host="0.0.0.0")
     # app.run(debug=True)
