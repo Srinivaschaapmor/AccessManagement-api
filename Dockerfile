@@ -5,7 +5,6 @@ FROM python:3.9-slim as build
 WORKDIR /app
 
 COPY requirements.txt ./
-RUN pip freeze > requirements.txt
 RUN pip install -r requirements.txt
 
 # Copy the .env file
