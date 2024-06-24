@@ -346,7 +346,71 @@ def update_user_access(empid, **kwargs):
     except Exception as e:
         logger.error('Error updating user details: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error occurred'}), 500
+    
+@user_routes.route('/users/delete/allAccess/<string:empid>', methods=['DELETE'])
+@token_required
+def delete_all_access(empid, **kwargs):
+    """
+    Delete all user access details (Access, SpaceName)
+    ---
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+      - name: empid
+        in: path
+        description: ID of the user to update access details
+        required: true
+        type: string
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            Access:
+              type: array
+              items:
+                type: string
+            SpaceName:
+              type: string
+    responses:
+      200:
+        description: User access details updated successfully
+      400:
+        description: Bad request - Invalid parameters
+      404:
+        description: User not found
+      403:
+        description: Permission denied
+      500:
+        description: Internal server error
+    """
+    try:
+        uploader_role = kwargs.get('uploader_role')
+        if 'Admin' not in uploader_role:
+            return jsonify({'message': 'Permission denied'}), 403
 
+        logger.info('Deleting access details for user with EmpId: %s', empid)
+        json_data = request.get_json()
+        empid=ObjectId(empid)
+
+        user = user_collection.find_one({'_id': empid})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        update_data = {
+          'Access': [],
+        }
+
+        user_collection.update_one({'_id': empid}, {'$set': update_data})
+        return jsonify({'message': 'User access deleted successfully'}), 200
+    except Exception as e:
+        logger.error('Error deleting user details: %s', str(e), exc_info=True)
+        return jsonify({'error': 'Internal server error occurred'}), 500
+
+
+    
 @user_routes.route('/users/delete/<string:empid>', methods=['DELETE'])
 @token_required
 def delete_user(empid, **kwargs):
