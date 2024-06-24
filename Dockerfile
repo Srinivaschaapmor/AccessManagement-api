@@ -1,23 +1,27 @@
-# Use Node.js 20 as the base image
-FROM node:20-alpine
+# Dockerfile.api
+# Stage 1: Build
+FROM python:3.9-slim as build
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json to the container
-COPY package*.json ./
+COPY requirements.txt ./
+RUN pip freeze > requirements.txt
+RUN pip install -r requirements.txt
 
-# Install project dependencies
-RUN npm install
+# Copy the .env file
+COPY .env .env
 
-# Install PM2 globally
-RUN npm install pm2 -g 
+COPY . .
 
-# Copy the rest of the application files 
-COPY . . 
+# Stage 2: Production
+FROM python:3.9-slim
 
-# Expose the port the app runs on 
-EXPOSE 4600
+WORKDIR /app
 
-# Run the application using PM2 with ecosystem file 
-CMD ["pm2-runtime", "start", "ecosystem.config.js"]
+COPY --from=build /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=build /usr/local/bin /usr/local/bin
+COPY --from=build /app /app
+
+EXPOSE 4500
+
+CMD ["gunicorn", "--bind", "0.0.0.0:4500", "app:app"]
