@@ -206,7 +206,7 @@ def verify_otp():
 
         if (datetime.now() - correct_otp_timestamp).total_seconds() > 120:
             logger.warning('OTP verification failed: OTP expired for %s', email)
-            return jsonify({'error': 'OTP expired. Please request a new one.'}), 400
+            return jsonify({'error': 'OTP expired. Please request a new one.'}), 410
 
         if otp_received == correct_otp:
             logger.info('OTP verification successful for %s', email)
