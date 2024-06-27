@@ -2,6 +2,12 @@ from uuid import uuid4
 from pydantic import BaseModel,Field,validator
 from typing import List
 
+class Model(BaseModel):
+    # Id:str=Field(default_factory=lambda: str(uuid4()))
+    category:str
+    value:str
+    label:str
+    
 class UserModel(BaseModel):
     Id:str=Field(default_factory=lambda: str(uuid4()))
     FirstName:str

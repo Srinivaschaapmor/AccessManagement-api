@@ -20,6 +20,22 @@ class UserConfig:
         collection = db['users']
         return collection
     
+class MasterdataConfig:
+    @staticmethod
+    def get_mongo_client():
+        client=MongoClient('mongodb+srv://nexus-360-dev-user:tgaiqVncYpj6vOpz@nexus-360-dev.6tgnxqq.mongodb.net/')
+        return client
+    @staticmethod
+    def get_database():
+        client=MasterdataConfig.get_mongo_client()
+        db=client['standard_api']
+        return db
+    @staticmethod
+    def get_category_collection():
+        db=MasterdataConfig.get_database()
+        collection=db['masterdata_details']
+        return collection  
+      
 class LoginConfig:
     @staticmethod
     def get_mongo_client():

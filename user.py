@@ -10,6 +10,7 @@ from functools import wraps
 import jwt as jwt_module
 from pymongo.collection import Collection
 
+
 from flask_cors import CORS
 from bson import ObjectId
 
@@ -73,7 +74,7 @@ def get_access_details_by_empid(empid):
     except Exception as e:
         logger.error('Error fetching user access details: %s', str(e), exc_info=True)
         return jsonify({"error": "Internal server error occurred"}), 500
-
+ 
 @user_routes.route('/users_with_access', methods=['GET'])
 def get_users_details_who_has_access():
     """
@@ -102,6 +103,7 @@ def get_users_details_who_has_access():
     except Exception as e:
         logger.error('Error fetching accessed user list: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error'}), 500
+  
 
 @user_routes.route('/create_user', methods=['POST'])
 @token_required
@@ -117,7 +119,7 @@ def create_users_data(**kwargs):
         in: body
         required: true
         schema:
-          type: object
+          type: array
           properties:
             FirstName:
               type: string

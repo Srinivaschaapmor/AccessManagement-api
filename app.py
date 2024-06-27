@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from loginpage import otp_routes
 from user import user_routes
+from masterdata import masterdata_routes
 from flask_mail import Mail
 from flasgger import Swagger
 from flask_cors import CORS
@@ -17,6 +18,7 @@ def homepage():
 
 app.register_blueprint(otp_routes)
 app.register_blueprint(user_routes)
+app.register_blueprint(masterdata_routes)
 
 # CORS(app)
 
