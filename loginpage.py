@@ -199,7 +199,7 @@ def verify_otp():
 
         if not logindata:
             logger.warning('Email not found in login details: %s', email)
-            return jsonify({'error': 'Invalid OTP'}), 400
+            return jsonify({'error': 'Invalid OTP'}), 401
 
         correct_otp = logindata['otp']
         correct_otp_timestamp = logindata['timestamp']
@@ -242,7 +242,7 @@ def verify_otp():
             }), 201
         else:
             logger.warning('Invalid OTP provided: %s', otp_received)
-            return jsonify({'error': 'Invalid OTP'}), 400
+            return jsonify({'error': 'Invalid OTP'}), 401
     except Exception as e:
         logger.error('Internal server error occurred: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error occurred'}), 500
