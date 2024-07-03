@@ -105,6 +105,88 @@ def get_users_details_who_has_access():
         return jsonify({'error': 'Internal server error'}), 500
   
 
+# @user_routes.route('/create_user', methods=['POST'])
+# @token_required
+# def create_users_data(**kwargs):
+#     """
+#     Create a user
+#     ---
+#     parameters:
+#       - name: Authorization
+#         in: header
+#         required: true
+#       - name: body
+#         in: body
+#         required: true
+#         schema:
+#           type: array
+#           properties:
+#             FirstName:
+#               type: string
+#             LastName:
+#               type: string
+#             EmpId:
+#               type: string
+#             Contact:
+#               type: string
+#             Email:
+#               type: string
+#             JobTitle:
+#               type: string
+#             EmployeeType:
+#               type: string
+#             SpaceName:
+#               type: string  
+#             Access:    
+#               type: array
+#               items:
+#                 type: string
+#             Role:
+#               type: string    
+#     responses:
+#       201:
+#         description: User data added successfully
+#       400:
+#         description: Error in creating user data
+#       403:
+#         description: Permission denied  
+#       409:
+#         description: Duplicate user ID
+#       500:
+#         description: Internal server error  
+#     """
+#     try:
+#         uploader_role = kwargs.get('uploader_role')
+#         if 'Admin' not in uploader_role:
+#             return jsonify({'message': 'Permission denied'}), 403
+#         logger.info('A new user data added successfully')
+
+#         json_data = request.get_json()
+#         json_data['Role'] = "User"
+#         json_data['Access'] = []
+#         # print("DATA", json_data)
+#         user_data = UserModel(**json_data)    
+
+#         def check_unique_fields(EmpId: str, Email: str, user_collection: Collection):
+#             if user_collection.find_one({"EmpId": EmpId}):
+#               raise ValueError(f'User already exists.')
+#             if user_collection.find_one({"Email": Email}):
+#               raise ValueError(f'User already exists.')
+#         check_unique_fields(user_data.EmpId, user_data.Email, user_collection)    
+        
+#         user_data.Id = str(uuid.uuid4())
+#         result = user_collection.insert_one(user_data.dict())
+#         return jsonify({'message': 'User data added successfully', 'document_id': str(result.inserted_id)}), 201
+#     except ValueError as e:
+#         # Handle duplicate EmpId or Email error
+#         logger.error('Duplicate')
+#         return jsonify({'error': str(e)}), 409
+#     except errors.DuplicateKeyError:
+#         # Handle potential duplicate key errors from MongoDB
+#         return jsonify({'error': 'Duplicate key error'}), 409
+#     except Exception as e:
+#         logger.error('Error creating user data: %s', str(e), exc_info=True)
+#         return jsonify({'error': 'Internal server error occurred'}), 500
 @user_routes.route('/create_user', methods=['POST'])
 @token_required
 def create_users_data(**kwargs):
@@ -119,7 +201,7 @@ def create_users_data(**kwargs):
         in: body
         required: true
         schema:
-          type: array
+          type: object
           properties:
             FirstName:
               type: string
@@ -136,42 +218,50 @@ def create_users_data(**kwargs):
             EmployeeType:
               type: string
             SpaceName:
-              type: string  
-            Access:    
+              type: string
+            Access:
               type: array
               items:
                 type: string
             Role:
-              type: string    
+              type: string
     responses:
       201:
         description: User data added successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            document_id:
+              type: string
       400:
         description: Error in creating user data
       403:
-        description: Permission denied  
+        description: Permission denied
       409:
         description: Duplicate user ID
       500:
-        description: Internal server error  
+        description: Internal server error
     """
     try:
         uploader_role = kwargs.get('uploader_role')
-        if 'Admin' not in uploader_role:
+        if uploader_role is None or 'Admin' not in uploader_role:
             return jsonify({'message': 'Permission denied'}), 403
         logger.info('A new user data added successfully')
 
         json_data = request.get_json()
         json_data['Role'] = "User"
         json_data['Access'] = []
-        # print("DATA", json_data)
+
         user_data = UserModel(**json_data)    
 
         def check_unique_fields(EmpId: str, Email: str, user_collection: Collection):
             if user_collection.find_one({"EmpId": EmpId}):
-              raise ValueError(f'User already exists.')
+                raise ValueError(f'User already exists.')
             if user_collection.find_one({"Email": Email}):
-              raise ValueError(f'User already exists.')
+                raise ValueError(f'User already exists.')
+        
         check_unique_fields(user_data.EmpId, user_data.Email, user_collection)    
         
         user_data.Id = str(uuid.uuid4())

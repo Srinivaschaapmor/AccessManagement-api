@@ -48,7 +48,7 @@ def get_masterdata(**kwargs):
    
 @masterdata_routes.route('/masterdata/<string:category>', methods=['GET'])
 @token_required
-def get_masterdata_by_category(category,**kwargs):
+def get_masterdata_by_category(category, **kwargs):
     """
     Get the masterdata by category
     ---
@@ -77,18 +77,17 @@ def get_masterdata_by_category(category,**kwargs):
             return jsonify({'message': 'Permission denied'}), 403
         
         logger.info('Fetching masterdata by category: %s', category)
-        masterdata = masterdata_collection.find({'category': category})
+        masterdata = masterdata_collection.find({'category': category}, {'label': 1, '_id': 0})
+        
         user_list = []
-        for user in masterdata:
-            user_dict = {
-                **user,
-                '_id': str(user['_id'])  # Convert ObjectId to string
-            }
-            user_model = Model(**user_dict)
-            user_list.append(user_model.dict())
+        for data in masterdata:
+            user_list.append(data.get('label'))
+        
         if not user_list:
             return jsonify({"error": "Category not found"}), 404
+        
         return jsonify(user_list), 200
+    
     except Exception as e:
         logger.error('Error fetching details: %s', str(e), exc_info=True)
         return jsonify({"error": "Internal server error occurred"}), 500
@@ -145,6 +144,66 @@ def create_masterdata(**kwargs):
         logger.error('Error creating user data: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error occurred'}), 500
     
+
+    
+@masterdata_routes.route('/create_masterdata_many', methods=['POST'])
+@token_required
+def create_masterdata_many(**kwargs):
+    """
+    Create multiple masterdata entries
+    ---
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              value:
+                type: string
+              label:
+                type: string
+    responses:
+      201:
+        description: Multiple masterdata entries added successfully
+      400:
+        description: Error in creating masterdata entries
+      403:
+        description: Permission denied
+      500:
+        description: Internal server error
+    """
+    try:
+        uploader_role = kwargs.get('uploader_role')
+        if not uploader_role or 'Admin' not in uploader_role:
+            return jsonify({'message': 'Permission denied'}), 403
+        
+        logger.info('Adding multiple master data entries')
+
+        json_data = request.get_json()
+        if not json_data or not isinstance(json_data, list):
+            return jsonify({'error': 'No valid data provided'}), 400
+
+        # Validate and insert each entry
+        inserted_ids = []
+        for data in json_data:
+            user_data = Model(**data)
+            result = masterdata_collection.insert_one(user_data.dict())
+            inserted_ids.append(str(result.inserted_id))
+
+        logger.info('Multiple master data entries added successfully')
+        return jsonify({'message': 'Multiple master data entries added successfully', 'inserted_ids': inserted_ids}), 201
+    except Exception as e:
+        logger.error('Error creating multiple master data entries: %s', str(e), exc_info=True)
+        return jsonify({'error': 'Internal server error occurred'}), 500
+   
 
 # if __name__=="__main__":
 #     masterdata_routes.run(debug=True)    
