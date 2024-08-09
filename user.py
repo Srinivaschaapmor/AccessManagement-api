@@ -105,6 +105,7 @@ def get_users_details_who_has_access():
         return jsonify({'error': 'Internal server error'}), 500
   
 
+
 @user_routes.route('/create_user', methods=['POST'])
 @token_required
 def create_users_data(**kwargs):
@@ -182,8 +183,9 @@ def create_users_data(**kwargs):
         logger.info('A new user data added successfully')
 
         json_data = request.get_json()
-        json_data['Role'] = "User"
+        # json_data['Role'] = "User"
         json_data['Access'] = []
+        json_data['AdminRoles']=[]
 
 
         user_data = UserModel(**json_data)    
@@ -213,6 +215,108 @@ def create_users_data(**kwargs):
         logger.error('Error creating user data: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error occurred'}), 500
     
+@user_routes.route('/create_users', methods=['POST'])
+@token_required
+def create_multiple_users(**kwargs):
+    """
+    Create multiple users
+    ---
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              FirstName:
+                type: string
+              LastName:
+                type: string
+              EmpId:
+                type: string
+              Contact:
+                type: string
+              Email:
+                type: string
+              JobTitle:
+                type: string
+              EmployeeType:
+                type: string
+              SpaceName:
+                type: string
+              Access:
+                type: array
+                items:
+                  type: string
+              Role:
+                type: string
+    responses:
+      201:
+        description: Users data added successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            documents_ids:
+              type: array
+              items:
+                type: string
+      400:
+        description: Error in creating users data
+      403:
+        description: Permission denied
+      409:
+        description: Duplicate user ID or Email
+      500:
+        description: Internal server error
+    """
+    try:
+        uploader_role = kwargs.get('uploader_role')
+        if uploader_role is None or 'Admin' not in uploader_role:
+            return jsonify({'message': 'Permission denied'}), 403
+        
+        users_data = request.get_json()
+
+        if not isinstance(users_data, list):
+            return jsonify({'error': 'Invalid request format. Expected an array of objects.'}), 400
+
+        documents_ids = []
+
+        def check_unique_fields(EmpId: str, Email: str, user_collection: Collection):
+            if user_collection.find_one({"EmpId": EmpId}):
+                raise ValueError(f'User with EmpId {EmpId} already exists.')
+            if user_collection.find_one({"Email": Email}):
+                raise ValueError(f'User with Email {Email} already exists.')
+
+        for user_data in users_data:
+            user_data['Access'] = []
+            user_data['AdminRoles'] = []
+
+            user_model = UserModel(**user_data)
+
+            check_unique_fields(user_model.EmpId, user_model.Email, user_collection)
+
+            user_model.Id = str(uuid.uuid4())
+            result = user_collection.insert_one(user_model.dict())
+            documents_ids.append(str(result.inserted_id))
+
+        return jsonify({'message': 'Users data added successfully', 'documents_ids': documents_ids}), 201
+    except ValueError as e:
+        # Handle duplicate EmpId or Email error
+        return jsonify({'error': str(e)}), 409
+    except errors.DuplicateKeyError:
+        # Handle potential duplicate key errors from MongoDB
+        return jsonify({'error': 'Duplicate key error'}), 409
+    except Exception as e:
+        logger.error('Error creating users data: %s', str(e), exc_info=True)
+        return jsonify({'error': 'Internal server error occurred'}), 500
+
 @user_routes.route('/users/update/<string:empid>', methods=['PUT'])
 @token_required
 def update_user_data(empid, **kwargs):
@@ -527,3 +631,138 @@ def delete_access_from_user(empid, access, **kwargs):
     except Exception as e:
         logger.error('Error deleting access of user: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error occurred'}), 500
+        
+@user_routes.route('/users/<string:empid>', methods=['GET'])
+@token_required
+def get_user_data(empid, **kwargs):
+    """
+    Get user data by EmpId
+    --- 
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+      - name: empid
+        in: path
+        description: EmpId of the user to fetch
+        required: true
+        type: string
+    responses:
+      200:
+        description: User data retrieved successfully
+        schema:
+          type: object
+          properties:
+            FirstName:
+              type: string
+            LastName:
+              type: string
+            EmpId:
+              type: string
+            Contact:
+              type: string
+            Email:
+              type: string
+            JobTitle:
+              type: string
+            EmployeeType:
+              type: string
+            SpaceName:
+              type: string
+            Access:
+              type: array
+              items:
+                type: string
+            Role:
+              type: string
+      400:
+        description: Bad request - Invalid parameters
+      404:
+        description: User not found
+      403:
+        description: Permission denied
+      500:
+        description: Internal server error
+    """
+    try:
+        uploader_role = kwargs.get('uploader_role')
+        if 'Admin' not in uploader_role:
+            return jsonify({'message': 'Permission denied'}), 403
+
+        logger.info("Fetching data for user with EmpId: %s", empid)
+        user = user_collection.find_one({'EmpId': empid})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        user_data = {
+            'FirstName': user.get('FirstName'),
+            'LastName': user.get('LastName'),
+            'EmpId': user.get('EmpId'),
+            'Contact': user.get('Contact'),
+            'Email': user.get('Email'),
+            'JobTitle': user.get('JobTitle'),
+            'EmployeeType': user.get('EmployeeType'),
+            'SpaceName': user.get('SpaceName'),
+            'Access': user.get('Access', []),
+            'Role': user.get('Role')
+        }
+
+        return jsonify(user_data), 200
+    except Exception as e:
+        logger.error('Error fetching user data: %s', str(e), exc_info=True)
+        return jsonify({'error': 'Internal server error occurred'}), 500
+    
+
+
+
+@user_routes.route('/searchaccess', methods=['GET'])
+def search_users_by_access():
+    """
+    Search users by access property
+    ---
+    responses:
+      200:
+        description: A dictionary where keys are spacenames and values are the count of users with that spacename in Access
+      404:
+        description: No users found with matching access property
+      500:
+        description: Internal server error
+    """
+    try:
+        regex_pattern = "End-User-"
+        
+        # Logging info
+        logger.info(f'Searching users with access containing: {regex_pattern}')
+        
+        # Query MongoDB to find users matching the access pattern
+        query = {'Access': {'$regex': regex_pattern}}
+        users = list(user_collection.find(query))
+
+        if not users:
+            return jsonify({"error": "No users found with access matching"}), 404
+        
+        # Dictionary to store spacename and count of users
+        space_count_map = {}
+
+        # Process each user
+        for user in users:
+            access_list = user.get('Access', [])
+            for access in access_list:
+                if regex_pattern in access:
+                    # Extract spacename from Access field
+                    spacename = access.split(regex_pattern)[-1].replace('-', ' ')
+                    
+                    # Count occurrences of spacename
+                    if spacename not in space_count_map:
+                        space_count_map[spacename] = 0
+                    space_count_map[spacename] += 1
+        
+        if not space_count_map:
+            return jsonify({"error": "No users found with access matching"}), 404
+        
+        # Return the count of users for each spacename
+        return jsonify(space_count_map), 200
+    
+    except Exception as e:
+        logger.error('Error searching users by access: %s', str(e), exc_info=True)
+        return jsonify({'error': 'Internal server error'}), 500 

@@ -225,7 +225,12 @@ def verify_otp():
                 'FirstName': user_data.get('FirstName'),
                 'Access': user_access,
                 'SpaceName': user_data.get('SpaceName'),
-                'Role': user_data.get('Role'),
+                'Role': user_data.get('Role'),  
+                'AdminRoles':user_data.get('AdminRoles'),
+                'FullName':user_data.get('FullName'),
+                'NexusSuperAdmin' : user_data.get('NexusSuperAdmin'),
+                'OrgxSuperAdmin':user_data.get('OrgxSuperAdmin')
+
             }
             secret_key = 'St@and@100ardapi@aap100mor#100'
             encoded_jwt = jwt_module.encode(payload, secret_key, algorithm='HS256')

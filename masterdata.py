@@ -33,8 +33,8 @@ def get_masterdata(**kwargs):
     """
     try:
         uploader_role = kwargs.get('uploader_role')
-        if not uploader_role or 'Admin' not in uploader_role:
-            return jsonify({'message': 'Permission denied'}), 403
+        # if not uploader_role or 'Admin' not in uploader_role:
+        #     return jsonify({'message': 'Permission denied'}), 403
         
         logger.info('Fetching masterdata')
         users = list(masterdata_collection.find({}))
@@ -45,7 +45,56 @@ def get_masterdata(**kwargs):
         logger.error('Error fetching masterdata: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error'}), 500
     
-   
+
+@masterdata_routes.route('/api/masterdata/label/<string:category>', methods=['GET'])
+@token_required
+def get_masterdata_by_category_auth(category, **kwargs):
+    """
+    Get the masterdata by category
+    ---
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+      - name: category
+        in: path
+        description: Category to retrieve details
+        required: true
+        type: string
+    responses:
+      200:
+        description: Category details retrieved successfully
+      403:
+        description: permission denied  
+      404:
+        description: Category not found
+      500:
+        description: Internal server error
+    """
+    try:
+        uploader_role = kwargs.get('uploader_role')
+        if not uploader_role or 'Admin' not in uploader_role:
+            return jsonify({'message': 'Permission denied'}), 403
+        
+        logger.info('Fetching masterdata by category: %s', category)
+        print(category)
+        masterdata = masterdata_collection.find({'category': category}, {'label': 1, '_id': 0})
+        # masterdata = masterdata_collection.find({'label': {'$regex': category, '$options': 'i'}}, {'value': 1, '_id': 0})
+        user_list = []
+        for data in masterdata:
+            user_list.append(data.get('label'))
+        print(user_list)
+        
+        if not user_list:
+            return jsonify({"error": "Category not found"}), 404
+        
+        return jsonify(user_list), 200
+    
+    except Exception as e:
+        logger.error('Error fetching details: %s', str(e), exc_info=True)
+        return jsonify({"error": "Internal server error occurred"}), 500
+
+
 @masterdata_routes.route('/masterdata/<string:category>', methods=['GET'])
 @token_required
 def get_masterdata_by_category(category, **kwargs):
@@ -77,11 +126,12 @@ def get_masterdata_by_category(category, **kwargs):
             return jsonify({'message': 'Permission denied'}), 403
         
         logger.info('Fetching masterdata by category: %s', category)
-        masterdata = masterdata_collection.find({'category': category}, {'label': 1, '_id': 0})
+        # masterdata = masterdata_collection.find({'category': category}, {'value': 1, '_id': 0})
+        masterdata = masterdata_collection.find({'label': {'$regex': category, '$options': 'i'}}, {'value': 1, '_id': 0})
         
         user_list = []
         for data in masterdata:
-            user_list.append(data.get('label'))
+            user_list.append(data.get('value'))
         
         if not user_list:
             return jsonify({"error": "Category not found"}), 404
@@ -91,6 +141,55 @@ def get_masterdata_by_category(category, **kwargs):
     except Exception as e:
         logger.error('Error fetching details: %s', str(e), exc_info=True)
         return jsonify({"error": "Internal server error occurred"}), 500
+    
+
+@masterdata_routes.route('/masterdata/label/<string:label>', methods=['GET'])
+@token_required
+def get_masterdata_by_labelclear(label, **kwargs):
+    """
+    Get the masterdata by category
+    ---
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+      - name: category
+        in: path
+        description: Category to retrieve details
+        required: true
+        type: string
+    responses:
+      200:
+        description: Category details retrieved successfully
+      403:
+        description: permission denied  
+      404:
+        description: Category not found
+      500:
+        description: Internal server error
+    """
+    try:
+        uploader_role = kwargs.get('uploader_role')
+        if not uploader_role or 'Admin' not in uploader_role:
+            return jsonify({'message': 'Permission denied'}), 403
+        
+        logger.info('Fetching masterdata by label: %s', label)
+        masterdata = masterdata_collection.find({'label': label}, {'value': 1, '_id': 0})
+        
+        user_list = []
+        for data in masterdata:
+            user_list.append(data.get('value'))
+        
+        if not user_list:
+            return jsonify({"error": "label not found"}), 404
+        
+        return jsonify(user_list), 200
+    
+    except Exception as e:
+        logger.error('Error fetching details: %s', str(e), exc_info=True)
+        return jsonify({"error": "Internal server error occurred"}), 500
+
+
     
 @masterdata_routes.route('/create_masterdata', methods=['POST'])
 @token_required
@@ -207,3 +306,53 @@ def create_masterdata_many(**kwargs):
 
 # if __name__=="__main__":
 #     masterdata_routes.run(debug=True)    
+
+
+@masterdata_routes.route('/masterdata/labels/<string:labels>', methods=['GET'])
+@token_required
+def get_masterdata_by_labels(labels, **kwargs):
+    """
+    Get the masterdata values by an array of labels
+    ---
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+      - name: labels
+        in: path
+        required: true
+        type: string
+        description: Comma-separated list of labels
+    responses:
+      200:
+        description: Array of values retrieved successfully
+      403:
+        description: Permission denied  
+      404:
+        description: One or more labels not found
+      500:
+        description: Internal server error occurred
+    """
+    try:
+        uploader_role = kwargs.get('uploader_role')
+        if not uploader_role or 'Admin' not in uploader_role:
+            return jsonify({'message': 'Permission denied'}), 403
+
+        label_list = labels.split(',')
+
+        if not label_list:
+            return jsonify({'error': 'No labels provided'}), 400
+
+        logger.info('Fetching masterdata by labels: %s', label_list)
+        masterdata = masterdata_collection.find({'label': {'$in': label_list}}, {'value': 1, '_id': 0})
+
+        values = [item['value'] for item in masterdata]
+       
+
+        
+
+        return jsonify(values), 200
+
+    except Exception as e:
+        logger.error('Error fetching details: %s', str(e), exc_info=True)
+        return jsonify({'error': 'Internal server error occurred'}), 500

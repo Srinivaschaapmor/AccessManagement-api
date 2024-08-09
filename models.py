@@ -22,6 +22,10 @@ class UserModel(BaseModel):
     # SpaceName:List[str]
     SpaceName: str
     Role: str
+    FullName: str
+    AdminRoles:List[str]
+    NexusSuperAdmin : bool
+    OrgxSuperAdmin:bool
 
     @validator('Contact')
     def validate_contact_length(cls,v):
