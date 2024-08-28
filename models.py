@@ -26,6 +26,7 @@ class UserModel(BaseModel):
     AdminRoles:List[str]
     NexusSuperAdmin : bool
     OrgxSuperAdmin:bool
+    Uid: str
 
     @validator('Contact')
     def validate_contact_length(cls,v):
