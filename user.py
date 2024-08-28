@@ -704,7 +704,9 @@ def get_user_data(empid, **kwargs):
             'EmployeeType': user.get('EmployeeType'),
             'SpaceName': user.get('SpaceName'),
             'Access': user.get('Access', []),
-            'Role': user.get('Role')
+            'Role': user.get('Role'),
+            'Uid':user.get('Uid'),
+            'fullName':user.get('FullName'),
         }
 
         return jsonify(user_data), 200
@@ -712,6 +714,91 @@ def get_user_data(empid, **kwargs):
         logger.error('Error fetching user data: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error occurred'}), 500
     
+@user_routes.route('/users/uid/<string:uid>', methods=['GET'])
+@token_required
+def get_user_data_by_uid(uid, **kwargs):
+    """
+    Get user data by Uid
+    ---
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+      - name: uid
+        in: path
+        description: Uid of the user to fetch
+        required: true
+        type: string
+    responses:
+      200:
+        description: User data retrieved successfully
+        schema:
+          type: object
+          properties:
+            FirstName:
+              type: string
+            LastName:
+              type: string
+            EmpId:
+              type: string
+            Contact:
+              type: string
+            Email:
+              type: string
+            JobTitle:
+              type: string
+            EmployeeType:
+              type: string
+            SpaceName:
+              type: string
+            Access:
+              type: array
+              items:
+                type: string
+            Role:
+              type: string
+            Uid:
+              type: string
+            FullName:
+              type: string
+      400:
+        description: Bad request - Invalid parameters
+      404:
+        description: User not found
+      403:
+        description: Permission denied
+      500:
+        description: Internal server error
+    """
+    try:
+        uploader_role = kwargs.get('uploader_role')
+        if 'Admin' not in uploader_role:
+            return jsonify({'message': 'Permission denied'}), 403
+
+        logger.info("Fetching data for user with Uid: %s", uid)
+        user = user_collection.find_one({'Uid': uid})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        user_data = {
+            'FirstName': user.get('FirstName'),
+            'LastName': user.get('LastName'),
+            'EmpId': user.get('EmpId'),
+            'Contact': user.get('Contact'),
+            'Email': user.get('Email'),
+            'JobTitle': user.get('JobTitle'),
+            'EmployeeType': user.get('EmployeeType'),
+            'SpaceName': user.get('SpaceName'),
+            'Access': user.get('Access', []),
+            'Role': user.get('Role'),
+            'Uid': user.get('Uid'),
+            'FullName': user.get('FullName'),
+        }
+
+        return jsonify(user_data), 200
+    except Exception as e:
+        logger.error('Error fetching user data: %s', str(e), exc_info=True)
+        return jsonify({'error': 'Internal server error occurred'}), 500
 
 
 
