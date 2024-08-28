@@ -229,7 +229,8 @@ def verify_otp():
                 'AdminRoles':user_data.get('AdminRoles'),
                 'FullName':user_data.get('FullName'),
                 'NexusSuperAdmin' : user_data.get('NexusSuperAdmin'),
-                'OrgxSuperAdmin':user_data.get('OrgxSuperAdmin')
+                'OrgxSuperAdmin':user_data.get('OrgxSuperAdmin'),
+                'Uid':user_data.get('Uid')
 
             }
             secret_key = 'St@and@100ardapi@aap100mor#100'
