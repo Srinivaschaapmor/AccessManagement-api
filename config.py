@@ -17,7 +17,12 @@ def read_tenant_from_file():
         return None
 tenant_details = read_tenant_from_file()
 if tenant_details:
-    tenant_Platfrom_DB= tenant_details['tenant_Platfrom_DB']
+    tenant_Platfrom_DB = tenant_details.get('tenant_Platfrom_DB')
+else:
+    tenant_Platfrom_DB = os.getenv("TENANT_DB")  # Use an environment variable as fallback
+    if not tenant_Platfrom_DB:
+        logger.error("Tenant details file missing, and TENANT_DB environment variable is not set.")
+        tenant_Platfrom_DB = None  # Handle the case where no DB config is available
 
 class tenantConfig:
     @staticmethod
