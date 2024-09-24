@@ -297,7 +297,7 @@ def connect_DB():
             "Open_AI_config": tenant.get('Open_AI_config'),
             "tenant_Platfrom_DB": tenant.get('tenant_Platfrom_DB'),
             "tenant_AI_DB": tenant.get('tenant_AI_DB'),
-            "Azure_blob_config": tenant.get('Azure_blob_config')
+            # "Azure_blob_config": tenant.get('Azure_blob_config')
         }
         write_tenant_to_file(response)
         
