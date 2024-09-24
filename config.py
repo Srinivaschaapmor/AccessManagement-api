@@ -1,8 +1,11 @@
 from pymongo import MongoClient
 import os
 import json
-# from pymongo.errors import ConfigurationError
+import logging
+# # from pymongo.errors import ConfigurationError
 
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
 
 def read_tenant_from_file():
     file_path = 'tenant_details.json'
