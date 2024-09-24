@@ -375,34 +375,116 @@ def update_user_data(empid, **kwargs):
 
         logger.info('Updating user data for EmpId: %s', empid)
         json_data = request.get_json()
-        empid = ObjectId(empid)
-
-        user = user_collection.find_one({'_id': empid})
+        user = user_collection.find_one({'EmpId': empid})
         if not user:
             return jsonify({'error': 'User not found'}), 404
         
-        # Check for duplicates
-        duplicate_user = user_collection.find_one({
-            '$and': [
-                {'_id': {'$ne': empid}},
-                {'$or': [{'EmpId': json_data.get('EmpId')}, {'Email': json_data.get('Email')}]}
-            ]
-        })
-        if duplicate_user:
-            return jsonify({'error': 'User already exists.'}), 409
+        # # Check for duplicates
+        # duplicate_user = user_collection.find_one({
+        #     '$and': [
+        #         {'_id': {'$ne': empid}},
+        #         {'$or': [{'EmpId': json_data.get('EmpId')}, {'Email': json_data.get('Email')}]}
+        #     ]
+        # })
+        # if duplicate_user:
+        #     return jsonify({'error': 'User already exists.'}), 409
         
         # Update data
         update_data = {
-            'FirstName': json_data.get('FirstName'),
-            'LastName': json_data.get('LastName'),
-            'EmpId': json_data.get('EmpId'),
-            'Contact': json_data.get('Contact'),
-            'Email': json_data.get('Email'),
-            'JobTitle': json_data.get('JobTitle'),
-            'EmployeeType': json_data.get('EmployeeType'),
-            'SpaceName': json_data.get('SpaceName')
+          'FirstName': json_data.get('FirstName'),
+          'LastName': json_data.get('LastName'),
+          'EmpId': json_data.get('EmpId'),
+          'Contact': json_data.get('Contact'),
+          'Email': json_data.get('Email'),
+          'JobTitle': json_data.get('JobTitle'),
+          'EmployeeType': json_data.get('EmployeeType'),
+          'SpaceName': json_data.get('SpaceName'),
+          'languagePreference': json_data.get('languagePreference'),
         }
-        user_collection.update_one({'_id': empid}, {'$set': update_data})
+        user_collection.update_one({'EmpId': empid}, {'$set': update_data})
+        return jsonify({'message': 'User data updated successfully'}), 200
+    except Exception as e:
+        logger.error('Error updating user data: %s', str(e), exc_info=True)
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@user_routes.route('/users/uid/<string:uid>', methods=['PUT'])
+@token_required
+def update_user_data_by_uid(uid, **kwargs):
+    """
+    Update user information
+    ---
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+      - name: uid
+        in: path
+        description: UID of the user to update
+        required: true
+        type: string
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            FirstName:
+              type: string
+            LastName:
+              type: string
+            EmpId:
+              type: string
+            Email:
+              type: string    
+            EmployeeType:
+              type: string
+            Contact:
+              type: string
+            JobTitle:
+              type: string
+            SpaceName:
+              type: string  
+            languagePreference:
+              type: String  
+    responses:
+      200:
+        description: User data updated successfully
+      400:
+        description: Bad request - Invalid parameters
+      404:
+        description: User not found
+      403:
+        description: Permission denied
+      409:
+        description: Duplicate user data
+      500:
+        description: Internal server error
+    """
+    try:
+        uploader_role = kwargs.get('uploader_role')
+        if 'Admin' not in uploader_role:
+            return jsonify({'message': 'Permission denied'}), 403
+
+        logger.info('Updating user data for Uid: %s', uid)
+        json_data = request.get_json()
+        user = user_collection.find_one({'Uid': uid})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Update data
+        update_data = {
+          # 'FirstName': json_data.get('FirstName'),
+          # 'LastName': json_data.get('LastName'),
+          # 'EmpId': json_data.get('EmpId'),
+          # 'Contact': json_data.get('Contact'),
+          # 'Email': json_data.get('Email'),
+          # 'JobTitle': json_data.get('JobTitle'),
+          # 'EmployeeType': json_data.get('EmployeeType'),
+          # 'SpaceName': json_data.get('SpaceName'),
+          # 'languagePreference': json_data.get('languagePreference'),
+        }
+        user_collection.update_one({'Uid': uid}, {'$set': json_data})
         return jsonify({'message': 'User data updated successfully'}), 200
     except Exception as e:
         logger.error('Error updating user data: %s', str(e), exc_info=True)
@@ -778,7 +860,7 @@ def get_user_data_by_uid(uid, **kwargs):
         logger.info("Fetching data for user with Uid: %s", uid)
         user = user_collection.find_one({'Uid': uid})
         if not user:
-            return jsonify({'error': 'User not found'}), 404
+          return jsonify({'error': 'User not found'}), 404
 
         user_data = {
             'FirstName': user.get('FirstName'),
@@ -793,6 +875,7 @@ def get_user_data_by_uid(uid, **kwargs):
             'Role': user.get('Role'),
             'Uid': user.get('Uid'),
             'FullName': user.get('FullName'),
+            'languagePreference': user.get('languagePreference'),
         }
 
         return jsonify(user_data), 200
@@ -800,6 +883,92 @@ def get_user_data_by_uid(uid, **kwargs):
         logger.error('Error fetching user data: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error occurred'}), 500
 
+@user_routes.route('/users/email/<string:email>', methods=['GET'])
+@token_required
+def get_user_data_by_email(email, **kwargs):
+    """
+    Get user data by Uid
+    ---
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+      - name: email
+        in: path
+        description: email of the user to fetch
+        required: true
+        type: string
+    responses:
+      200:
+        description: User data retrieved successfully
+        schema:
+          type: object
+          properties:
+            FirstName:
+              type: string
+            LastName:
+              type: string
+            EmpId:
+              type: string
+            Contact:
+              type: string
+            Email:
+              type: string
+            JobTitle:
+              type: string
+            EmployeeType:
+              type: string
+            SpaceName:
+              type: string
+            Access:
+              type: array
+              items:
+                type: string
+            Role:
+              type: string
+            Uid:
+              type: string
+            FullName:
+              type: string
+      400:
+        description: Bad request - Invalid parameters
+      404:
+        description: User not found
+      403:
+        description: Permission denied
+      500:
+        description: Internal server error
+    """
+    try:
+        uploader_role = kwargs.get('uploader_role')
+        if 'Admin' not in uploader_role:
+            return jsonify({'message': 'Permission denied'}), 403
+
+        logger.info("Fetching data for user with Email: %s", email)
+        user = user_collection.find_one({'Email': email})
+        if not user:
+          return jsonify({'error': 'User not found'}), 404
+
+        user_data = {
+            'FirstName': user.get('FirstName'),
+            'LastName': user.get('LastName'),
+            'EmpId': user.get('EmpId'),
+            'Contact': user.get('Contact'),
+            'Email': user.get('Email'),
+            'JobTitle': user.get('JobTitle'),
+            'EmployeeType': user.get('EmployeeType'),
+            'SpaceName': user.get('SpaceName'),
+            'Access': user.get('Access', []),
+            'Role': user.get('Role'),
+            'Uid': user.get('Uid'),
+            'FullName': user.get('FullName'),
+            'languagePreference': user.get('languagePreference'),
+        }
+
+        return jsonify(user_data), 200
+    except Exception as e:
+        logger.error('Error fetching user data: %s', str(e), exc_info=True)
+        return jsonify({'error': 'Internal server error occurred'}), 500
 
 
 @user_routes.route('/searchaccess', methods=['GET'])
