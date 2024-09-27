@@ -11,7 +11,7 @@ class UserConfig:
     @staticmethod
     def get_database():
         client = UserConfig.get_mongo_client()
-        db = client['standard_api']
+        db = client['auth_db']
         return db
 
     @staticmethod
@@ -28,7 +28,7 @@ class MasterdataConfig:
     @staticmethod
     def get_database():
         client=MasterdataConfig.get_mongo_client()
-        db=client['standard_api']
+        db=client['auth_db']
         return db
     @staticmethod
     def get_category_collection():
@@ -44,7 +44,7 @@ class LoginConfig:
     @staticmethod
     def get_database():
         client = LoginConfig.get_mongo_client()
-        db= client['standard_api']
+        db= client['auth_db']
         return db
     @staticmethod
     def get_login_details():
@@ -61,7 +61,7 @@ class UserLogin:
     @staticmethod
     def get_database():
         client = UserLogin.get_mongo_client()
-        db = client['standard_api']
+        db = client['auth_db']
         return db
 
     @staticmethod
