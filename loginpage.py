@@ -3,48 +3,21 @@ from datetime import datetime
 from flask_mail import Mail, Message
 import random
 import string
-from config import LoginConfig, UserLogin
+from config import LoginConfig, UserLogin,tenantConfig
 import re
 from flasgger import Swagger, swag_from  # Import swag_from from flasgger
 from common_utils.logging_utils import setup_logger
 from pymongo import MongoClient
 import jwt as jwt_module
 from flask_cors import CORS
+import json
+import os
 
 # Create a Flask app
 otp_routes = Blueprint('otp_routes', __name__)
+selectDB_routes = Blueprint('selectDB_routes', __name__)
 logger = setup_logger()
 mail = Mail()
-# dummy data
-# access = [
-#   "Recent_Openings_View",
-#   "Recent_Openings_JobOpenings_View",
-#   "Recent_Openings_JobOpenings_Write",
-#   "Events_View",
-#   "Policies_View",
-#   "Employees_View",
-#   "Recruitment_View",
-#   "New_Recruitment_View_And_Write",
-#   "New_Recruitment_Write",
-#   "Recruitment_Status_View_And_write",
-#   "Recruitment_Status_Write",
-#   "On_Boarding_View_And_Write",
-#   "On_Boarding_Write",
-#   "New_Job_View_And_Write",
-#   "New_Job_Write",
-#   "Interviewer_Board_View",
-#   "Interviewer_Board_write",
-#   "Blogs_View_And_Write",
-#   "Blogs_Write",
-#   "Write_FeedBack_View",
-#   "Write_FeedBack_View_And_Write",
-#   "View_FeedBack_View",
-#   "View_FeedBack_Write",
-#   "Projects_View_And_Write",
-#   "Projects_Write",
-#   "Reports_View_And_Write",
-#   "Reports_Write",
-# ]
 
 def generate_otp():
     # Randomly generating OTP
@@ -252,3 +225,90 @@ def verify_otp():
     except Exception as e:
         logger.error('Internal server error occurred: %s', str(e), exc_info=True)
         return jsonify({'error': 'Internal server error occurred'}), 500
+    
+
+def write_tenant_to_file(tenant):
+    file_path = 'tenant_details.json'
+    with open(file_path, 'w') as f:
+        json.dump(tenant, f)
+
+@selectDB_routes.route('/connect/database', methods=['POST'])
+@swag_from({
+    'description': 'Endpoint to send OTP to the provided email address.',
+    'parameters': [{
+        'in': 'body',
+        'name': 'email',
+        'description': 'The email address where the OTP will be sent.',
+        'required': True,
+        'schema': {
+            'type': 'object',
+            'properties': {
+                'email': {
+                    'type': 'string'
+                }
+            }
+        }
+    }],
+    'responses': {
+        '201': {
+            'description': 'A Message indicating that the OTP has been sent successfully.',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'}
+                }
+            }
+        },
+        '400': {
+            'description': 'Invalid email address provided.',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'error': {'type': 'string'}
+                }
+            }
+        },
+        '500': {
+            'description': 'Internal server error occurred.',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'error': {'type': 'string'}
+                }
+            }
+        }
+    }
+})
+def connect_DB():
+    try:
+        data = request.get_json()
+        subdomain = data.get('subdomain')
+
+        if not(subdomain):
+            logger.error('Invalid Domain provided: %s', subdomain)
+            return jsonify({'error': 'Invalid Domain provided'}), 400
+        
+        collection = tenantConfig.get_tenant_collection()
+        tenant = collection.find_one({'tenant_name':subdomain})
+        tenant_email_template = tenant.get('email_template')
+        response = {
+            # "tenant_id": tenant.get('tenant_id'),
+            # "tenant_name": tenant.get('tenant_name'),
+            # "Open_AI_config": tenant.get('Open_AI_config'),
+            "tenant_Platfrom_DB": tenant.get('tenant_Platfrom_DB'),
+            # "tenant_AI_DB": tenant.get('tenant_AI_DB'),
+            # "Azure_blob_config": tenant.get('Azure_blob_config')
+        }
+        write_tenant_to_file(response)
+        
+
+        if tenant:
+            # print("Tenant found:", tenant)
+            return jsonify({'message': 'Tenant found', 'tenant': response}), 200
+        else:
+            logger.error('Tenant not found for subdomain: %s', subdomain)
+            return jsonify({'error': 'Tenant not found'}), 404
+
+    except Exception as e:
+        logger.error('Error occurred while connecting to the DB: %s', str(e))
+        return jsonify({'error': 'Internal server error'}), 500

@@ -1,11 +1,50 @@
 from pymongo import MongoClient
-# from pymongo.errors import ConfigurationError
+import os
+import json
+import logging
+# # from pymongo.errors import ConfigurationError
+
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
+
+def read_tenant_from_file():
+    file_path = 'tenant_details.json'
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as f:
+            return json.load(f)
+    else:
+        logger.error('Tenant details file not found')
+        return None
+tenant_details = read_tenant_from_file()
+if tenant_details:
+    tenant_Platfrom_DB = tenant_details.get('tenant_Platfrom_DB')
+else:
+    tenant_Platfrom_DB = os.getenv("TENANT_DB")  # Use an environment variable as fallback
+    if not tenant_Platfrom_DB:
+        logger.error("Tenant details file missing, and TENANT_DB environment variable is not set.")
+        tenant_Platfrom_DB = None  # Handle the case where no DB config is available
+
+class tenantConfig:
+    @staticmethod
+    def get_mongo_client():
+        client = MongoClient(os.getenv("TENANT_DB"))
+        return client
+    @staticmethod
+    def get_database():
+        client = tenantConfig.get_mongo_client()
+        db = client['tenant']
+        return db
+    @staticmethod
+    def get_tenant_collection():
+        db = tenantConfig.get_database()
+        collection = db['tenant_configurations']
+        return collection
 
 
 class UserConfig:
     @staticmethod
     def get_mongo_client():
-        client = MongoClient('mongodb+srv://nexus-360-dev-user:tgaiqVncYpj6vOpz@nexus-360-dev.6tgnxqq.mongodb.net/')
+        client = MongoClient(tenant_Platfrom_DB)
         return client
 
     @staticmethod
@@ -23,7 +62,7 @@ class UserConfig:
 class MasterdataConfig:
     @staticmethod
     def get_mongo_client():
-        client=MongoClient('mongodb+srv://nexus-360-dev-user:tgaiqVncYpj6vOpz@nexus-360-dev.6tgnxqq.mongodb.net/')
+        client=MongoClient(tenant_Platfrom_DB)
         return client
     @staticmethod
     def get_database():
@@ -39,7 +78,7 @@ class MasterdataConfig:
 class LoginConfig:
     @staticmethod
     def get_mongo_client():
-        client = MongoClient('mongodb+srv://nexus-360-dev-user:tgaiqVncYpj6vOpz@nexus-360-dev.6tgnxqq.mongodb.net/')
+        client = MongoClient(tenant_Platfrom_DB)
         return client 
     @staticmethod
     def get_database():
@@ -55,7 +94,7 @@ class LoginConfig:
 class UserLogin:
     @staticmethod
     def get_mongo_client():
-        client = MongoClient('mongodb+srv://nexus-360-dev-user:tgaiqVncYpj6vOpz@nexus-360-dev.6tgnxqq.mongodb.net/')
+        client = MongoClient(tenant_Platfrom_DB)
         return client
 
     @staticmethod
